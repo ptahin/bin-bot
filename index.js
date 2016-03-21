@@ -6,7 +6,7 @@ var
 
 var range = []
 
-csv.fromPath(__dirname + './node_modules/data/ranges.csv').on('data', function (d) {range.push(d)})
+csv.fromPath('/home/ubuntu/binlistData/ranges.csv', {headers: true}).on('data', function (d) {range.push(d)})
 
 module.exports = function () {
   var url = 'https://akura.co/telegram/' + require('./package').name + '/hook'
@@ -18,17 +18,22 @@ module.exports = function () {
   return function (req, res) {
     console.log(req.body)
     if (req.body.message) {
-      var n = +req.body.message
-      _.find(range, function (range) {
-        if (n < range.iin_start)
+      var text = 'Not found'
+      var n = +req.body.message.text
+      var r = _.find(range, function (range) {
+        if (n < +range.iin_start)
           return
-        if (range.iin_end && (n > range.iin_end))
+        if (+range.iin_end && (n > +range.iin_end))
           return
-        res.json({method: 'sendMessage', chat_id: req.body.message.chat.id, text: JSON.stringify(range)})
+        if (!+range.iin_end && (n != +range.iin_start))
+          return
         return true
       })
+      if (r)
+        text = JSON.stringify(r)
+      res.json({method: 'sendMessage', chat_id: req.body.message.chat.id, text: text})
       return
     }
     res.end()
-  })
+  }
 }
